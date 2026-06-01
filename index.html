@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cost Calculator – Remotely</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    background: linear-gradient(135deg, #f9e8f8 0%, #ede8f9 50%, #e8eef9 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 2rem;
+    color: #0f0f0f;
+  }
+
+  .calc {
+    width: 100%;
+    max-width: 960px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    background: rgba(255,255,255,0.6);
+    backdrop-filter: blur(12px);
+    border-radius: 24px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.8);
+    box-shadow: 0 4px 40px rgba(160,130,220,0.12);
+  }
+
+  .left-panel {
+    padding: 32px;
+    border-right: 1px solid rgba(200,180,240,0.3);
+  }
+
+  .tab-row {
+    display: flex;
+    background: rgba(240,235,255,0.7);
+    border-radius: 100px;
+    padding: 4px;
+    margin-bottom: 24px;
+    border: 1px solid rgba(200,180,240,0.3);
+  }
+
+  .tab {
+    flex: 1;
+    padding: 10px 16px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 100px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+    background: none;
+    border: none;
+    color: #888;
+  }
+
+  .tab.active {
+    background: #fff;
+    color: #0f0f0f;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    font-weight: 600;
+  }
+
+  .rate-type-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .rate-type-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #666;
+    flex-shrink: 0;
+  }
+
+  .rate-pill {
+    padding: 6px 14px;
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1.5px solid rgba(200,180,240,0.4);
+    background: rgba(240,235,255,0.5);
+    color: #888;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+
+  .rate-pill.active {
+    background: #7c6fcd;
+    color: #fff;
+    border-color: #7c6fcd;
+  }
+
+  .field { margin-bottom: 20px; }
+
+  .field-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .field-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #444;
+  }
+
+  .field-val {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f0f0f;
+  }
+
+  .input-wrap {
+    display: flex;
+    align-items: center;
+    border: 1.5px solid rgba(200,180,240,0.5);
+    border-radius: 10px;
+    overflow: hidden;
+    background: rgba(255,255,255,0.8);
+    transition: border-color 0.15s;
+  }
+  .input-wrap:focus-within { border-color: #7c6fcd; }
+
+  .input-prefix {
+    padding: 0 12px;
+    font-size: 15px;
+    color: #888;
+    background: rgba(240,235,255,0.5);
+    border-right: 1px solid rgba(200,180,240,0.3);
+    height: 42px;
+    display: flex;
+    align-items: center;
+  }
+
+  .input-wrap input {
+    flex: 1;
+    border: none;
+    outline: none;
+    padding: 0 14px;
+    font-size: 15px;
+    font-family: inherit;
+    color: #0f0f0f;
+    height: 42px;
+    background: transparent;
+  }
+
+  input[type="range"] {
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background: linear-gradient(to right, #7c6fcd var(--pct, 50%), #ddd var(--pct, 50%));
+    outline: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #7c6fcd;
+    border: 3px solid #fff;
+    box-shadow: 0 1px 6px rgba(124,111,205,0.4);
+    cursor: pointer;
+  }
+
+  .slider-input {
+    width: 100%;
+    margin-top: 8px;
+    border: 1.5px solid rgba(200,180,240,0.4);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 14px;
+    font-family: inherit;
+    color: #0f0f0f;
+    background: rgba(255,255,255,0.7);
+    outline: none;
+  }
+  .slider-input:focus { border-color: #7c6fcd; }
+
+  .fee-box {
+    background: rgba(240,235,255,0.5);
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid rgba(200,180,240,0.3);
+    margin-top: 4px;
+  }
+
+  .fee-box-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .fee-cards-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .fee-mini-card {
+    background: rgba(255,255,255,0.7);
+    border-radius: 8px;
+    padding: 10px 12px;
+    border: 1px solid rgba(200,180,240,0.3);
+    text-align: center;
+  }
+
+  .fee-mini-label { font-size: 11px; color: #888; margin-bottom: 4px; }
+  .fee-mini-val { font-size: 16px; font-weight: 700; color: #0f0f0f; }
+
+  .right-panel {
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    color: #aaa;
+  }
+
+  .empty-icon {
+    width: 72px;
+    height: 72px;
+    background: rgba(240,235,255,0.6);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+  }
+
+  .empty-state h3 { font-size: 18px; font-weight: 600; color: #333; }
+  .empty-state p { font-size: 13px; color: #888; line-height: 1.6; max-width: 260px; }
+
+  .results-title {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #aaa;
+    margin-bottom: 16px;
+  }
+
+  .result-row {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 16px;
+    width: 100%;
+  }
+
+  .result-card {
+    background: rgba(255,255,255,0.7);
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid rgba(200,180,240,0.3);
+    text-align: left;
+  }
+
+  .result-card.savings {
+    background: #0f0f0f;
+    border-color: transparent;
+  }
+
+  .result-card-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #aaa;
+    margin-bottom: 6px;
+  }
+
+  .result-card.savings .result-card-label { color: rgba(255,255,255,0.4); }
+
+  .result-card-value {
+    font-size: 26px;
+    font-weight: 700;
+    color: #0f0f0f;
+  }
+
+  .result-card.savings .result-card-value { color: #fff; }
+
+  .result-pct {
+    font-size: 12px;
+    color: #a78bfa;
+    margin-top: 4px;
+    font-weight: 500;
+  }
+
+  .calc-btn {
+    width: 100%;
+    background: #0f0f0f;
+    color: #fff;
+    border: none;
+    border-radius: 100px;
+    padding: 14px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 24px;
+  }
+
+  .calc-btn:hover { background: #333; transform: translateY(-1px); }
+
+  .reset-link {
+    text-align: center;
+    margin-top: 10px;
+    font-size: 12px;
+    color: #aaa;
+    cursor: pointer;
+    text-decoration: underline;
+    font-family: inherit;
+    border: none;
+    background: none;
+    width: 100%;
+  }
+
+  @media (max-width: 640px) {
+    body { padding: 1rem; }
+    .calc { grid-template-columns: 1fr; }
+    .left-panel { border-right: none; border-bottom: 1px solid rgba(200,180,240,0.3); }
+  }
+</style>
+</head>
+<body>
+
+<div class="calc" id="calc">
+
+  <div class="left-panel">
+    <div class="tab-row">
+      <button class="tab active" id="tab-trad" onclick="switchTab('trad')">Traditional</button>
+      <button class="tab" id="tab-rem" onclick="switchTab('rem')">Remotely</button>
+    </div>
+
+    <div id="view-trad">
+      <div class="rate-type-row">
+        <span class="rate-type-label">Rate Type</span>
+        <button class="rate-pill active" onclick="setRate('hourly',this)">Hourly Rate</button>
+        <button class="rate-pill" onclick="setRate('monthly',this)">Monthly Rate</button>
+        <button class="rate-pill" onclick="setRate('annual',this)">Annual Rate</button>
+      </div>
+
+      <div class="field">
+        <div class="field-header">
+          <span class="field-label" id="rate-label">Hourly Rate</span>
+        </div>
+        <div class="input-wrap">
+          <span class="input-prefix">$</span>
+          <input type="number" id="hourly-rate" value="75" min="0" oninput="updateSliders(); update()">
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-header">
+          <span class="field-label">Number of Developers</span>
+          <span class="field-val" id="dev-val">3</span>
+        </div>
+        <input type="range" id="dev-count" min="1" max="20" value="3" step="1" oninput="syncSlider(this,'dev-val','dev-num',''); update()">
+        <input class="slider-input" type="number" id="dev-num" value="3" min="1" max="20" oninput="syncNum(this,'dev-count','dev-val',''); update()">
+      </div>
+
+      <div class="field">
+        <div class="field-header">
+          <span class="field-label">Hours Per Week</span>
+          <span class="field-val" id="hours-val">40</span>
+        </div>
+        <input type="range" id="hours-week" min="1" max="60" value="40" step="1" oninput="syncSlider(this,'hours-val','hours-num',''); update()">
+        <input class="slider-input" type="number" id="hours-num" value="40" min="1" max="60" oninput="syncNum(this,'hours-week','hours-val',''); update()">
+      </div>
+
+      <div class="field">
+        <div class="field-header">
+          <span class="field-label">Weeks Per Year</span>
+          <span class="field-val" id="weeks-val">52</span>
+        </div>
+        <input type="range" id="weeks-year" min="1" max="52" value="52" step="1" oninput="syncSlider(this,'weeks-val','weeks-num',''); update()">
+        <input class="slider-input" type="number" id="weeks-num" value="52" min="1" max="52" oninput="syncNum(this,'weeks-year','weeks-val',''); update()">
+      </div>
+
+      <div class="fee-box">
+        <div class="fee-box-title">ⓘ Agency Fee Distribution</div>
+        <div class="field-header">
+          <span class="field-label">Agency Portion (%)</span>
+          <span class="field-val" id="agency-pct-val">65%</span>
+        </div>
+        <input type="range" id="agency-pct" min="0" max="100" value="65" step="1" oninput="document.getElementById('agency-pct-val').textContent=this.value+'%'; updateSliders(); update()">
+        <div class="fee-cards-row">
+          <div class="fee-mini-card">
+            <div class="fee-mini-label">Agency Fee</div>
+            <div class="fee-mini-val" id="agency-fee-display">$48.75/hr</div>
+          </div>
+          <div class="fee-mini-card">
+            <div class="fee-mini-label">Developer</div>
+            <div class="fee-mini-val" id="dev-fee-display">$26.25/hr</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="view-rem" style="display:none;">
+      <p style="font-size:13px; color:#666; margin-bottom:20px; line-height:1.6;">With Remotely, you pay the engineer directly plus a flat monthly management fee.</p>
+
+      <div class="field">
+        <div class="field-header">
+          <span class="field-label">Engineer Monthly Salary</span>
+          <span class="field-val" id="eng-sal-val">$4,500</span>
+        </div>
+        <input type="range" id="eng-salary" min="2000" max="12000" value="4500" step="100" oninput="updateEngineerSalary(this.value); update()">
+        <input class="slider-input" type="number" id="eng-sal-num" value="4500" min="2000" max="12000" oninput="syncEngNum(this.value); update()">
+      </div>
+
+      <div class="fee-box" style="background: rgba(240,235,255,0.6);">
+        <div class="fee-box-title" style="color:#7c6fcd;">Management Fee Tier</div>
+        <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
+          <div id="tier-low" onclick="selectTier('low')" style="padding:12px 14px; border-radius:10px; border:2px solid #7c6fcd; background:rgba(124,111,205,0.08); cursor:pointer;">
+            <div style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#7c6fcd; margin-bottom:4px;">Under $5,000/mo</div>
+            <div style="font-size:20px; font-weight:700; color:#0f0f0f;">$1,000 <span style="font-size:12px; font-weight:400; color:#aaa;">/ month</span></div>
+          </div>
+          <div id="tier-high" onclick="selectTier('high')" style="padding:12px 14px; border-radius:10px; border:1.5px solid rgba(200,180,240,0.4); background:rgba(255,255,255,0.6); cursor:pointer;">
+            <div style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#aaa; margin-bottom:4px;">$5,000/mo or more</div>
+            <div style="font-size:20px; font-weight:700; color:#0f0f0f;">$2,000 <span style="font-size:12px; font-weight:400; color:#aaa;">/ month</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="calc-btn" onclick="calculate()">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 8h6M8 5v6"/></svg>
+      Calculate Savings
+    </button>
+    <button class="reset-link" onclick="resetCalc()">Reset</button>
+  </div>
+
+  <div class="right-panel" id="right-panel">
+    <div class="empty-state" id="empty-state">
+      <div class="empty-icon">🧮</div>
+      <h3>Calculate Your Savings</h3>
+      <p>Fill in the details and click "Calculate Savings" to see your comparison.</p>
+    </div>
+
+    <div id="results-state" style="display:none; width:100%;">
+      <div class="results-title">Annual Comparison</div>
+      <div class="result-row">
+        <div class="result-card">
+          <div class="result-card-label">Traditional (Annual)</div>
+          <div class="result-card-value" id="trad-annual">—</div>
+        </div>
+        <div class="result-card">
+          <div class="result-card-label">With Remotely (Annual)</div>
+          <div class="result-card-value" id="rem-annual">—</div>
+        </div>
+        <div class="result-card savings">
+          <div class="result-card-label">Annual Savings with Remotely</div>
+          <div class="result-card-value" id="savings-val">—</div>
+          <div class="result-pct" id="savings-pct"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  var selectedTier = 'low';
+  var rateType = 'hourly';
+
+  function switchTab(tab) {
+    document.getElementById('tab-trad').classList.toggle('active', tab === 'trad');
+    document.getElementById('tab-rem').classList.toggle('active', tab === 'rem');
+    document.getElementById('view-trad').style.display = tab === 'trad' ? 'block' : 'none';
+    document.getElementById('view-rem').style.display = tab === 'rem' ? 'block' : 'none';
+  }
+
+  function setRate(type, el) {
+    rateType = type;
+    document.querySelectorAll('.rate-pill').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    var labels = { hourly: 'Hourly Rate', monthly: 'Monthly Rate', annual: 'Annual Rate' };
+    document.getElementById('rate-label').textContent = labels[type];
+    update();
+  }
+
+  function syncSlider(slider, valId, numId, suffix) {
+    document.getElementById(valId).textContent = slider.value + suffix;
+    document.getElementById(numId).value = slider.value;
+    updateSliderTrack(slider);
+  }
+
+  function syncNum(input, sliderId, valId, suffix) {
+    var s = document.getElementById(sliderId);
+    s.value = input.value;
+    document.getElementById(valId).textContent = input.value + suffix;
+    updateSliderTrack(s);
+  }
+
+  function updateSliderTrack(slider) {
+    var min = parseFloat(slider.min), max = parseFloat(slider.max), val = parseFloat(slider.value);
+    var pct = ((val - min) / (max - min)) * 100;
+    slider.style.setProperty('--pct', pct + '%');
+  }
+
+  function updateEngineerSalary(val) {
+    val = parseInt(val);
+    document.getElementById('eng-sal-val').textContent = '$' + val.toLocaleString();
+    document.getElementById('eng-sal-num').value = val;
+    updateSliderTrack(document.getElementById('eng-salary'));
+    if (val >= 5000 && selectedTier === 'low') selectTier('high');
+    if (val < 5000 && selectedTier === 'high') selectTier('low');
+  }
+
+  function syncEngNum(val) {
+    val = parseInt(val);
+    document.getElementById('eng-salary').value = val;
+    updateEngineerSalary(val);
+  }
+
+  function selectTier(tier) {
+    selectedTier = tier;
+    var low = document.getElementById('tier-low');
+    var high = document.getElementById('tier-high');
+    if (tier === 'low') {
+      low.style.border = '2px solid #7c6fcd';
+      low.style.background = 'rgba(124,111,205,0.08)';
+      low.querySelector('div').style.color = '#7c6fcd';
+      high.style.border = '1.5px solid rgba(200,180,240,0.4)';
+      high.style.background = 'rgba(255,255,255,0.6)';
+      high.querySelector('div').style.color = '#aaa';
+    } else {
+      high.style.border = '2px solid #7c6fcd';
+      high.style.background = 'rgba(124,111,205,0.08)';
+      high.querySelector('div').style.color = '#7c6fcd';
+      low.style.border = '1.5px solid rgba(200,180,240,0.4)';
+      low.style.background = 'rgba(255,255,255,0.6)';
+      low.querySelector('div').style.color = '#aaa';
+    }
+  }
+
+  function getHourlyRate() {
+    var rate = parseFloat(document.getElementById('hourly-rate').value) || 0;
+    if (rateType === 'monthly') return rate / (4.33 * 40);
+    if (rateType === 'annual') return rate / (52 * 40);
+    return rate;
+  }
+
+  function updateSliders() {
+    var hourly = getHourlyRate();
+    var pct = parseInt(document.getElementById('agency-pct').value);
+    var agencyFee = hourly * (pct / 100);
+    var devFee = hourly - agencyFee;
+    document.getElementById('agency-fee-display').textContent = '$' + agencyFee.toFixed(2) + '/hr';
+    document.getElementById('dev-fee-display').textContent = '$' + devFee.toFixed(2) + '/hr';
+    ['dev-count','hours-week','weeks-year','agency-pct','eng-salary'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) updateSliderTrack(el);
+    });
+  }
+
+  function update() { updateSliders(); }
+
+  function calculate() {
+    var hourly = getHourlyRate();
+    var devs = parseInt(document.getElementById('dev-count').value);
+    var hours = parseInt(document.getElementById('hours-week').value);
+    var weeks = parseInt(document.getElementById('weeks-year').value);
+    var tradAnnual = hourly * hours * weeks * devs;
+
+    var engSalary = parseInt(document.getElementById('eng-salary').value);
+    var mgmtFee = selectedTier === 'low' ? 1000 : 2000;
+    var remAnnual = (engSalary + mgmtFee) * 12 * devs;
+
+    var savings = tradAnnual - remAnnual;
+    var pct = tradAnnual > 0 ? Math.round((savings / tradAnnual) * 100) : 0;
+    var fmt = function(n) { return '$' + Math.abs(Math.round(n)).toLocaleString(); };
+
+    document.getElementById('trad-annual').textContent = fmt(tradAnnual);
+    document.getElementById('rem-annual').textContent = fmt(remAnnual);
+    document.getElementById('savings-val').textContent = savings >= 0 ? fmt(savings) : '-' + fmt(savings);
+    document.getElementById('savings-pct').textContent = savings >= 0 ? pct + '% less than traditional' : 'Remotely costs more at these inputs';
+
+    document.getElementById('empty-state').style.display = 'none';
+    document.getElementById('results-state').style.display = 'block';
+  }
+
+  function resetCalc() {
+    document.getElementById('hourly-rate').value = 75;
+    document.getElementById('dev-count').value = 3; document.getElementById('dev-val').textContent = '3'; document.getElementById('dev-num').value = 3;
+    document.getElementById('hours-week').value = 40; document.getElementById('hours-val').textContent = '40'; document.getElementById('hours-num').value = 40;
+    document.getElementById('weeks-year').value = 52; document.getElementById('weeks-val').textContent = '52'; document.getElementById('weeks-num').value = 52;
+    document.getElementById('agency-pct').value = 65; document.getElementById('agency-pct-val').textContent = '65%';
+    document.getElementById('eng-salary').value = 4500; document.getElementById('eng-sal-val').textContent = '$4,500'; document.getElementById('eng-sal-num').value = 4500;
+    selectTier('low');
+    document.getElementById('empty-state').style.display = 'flex';
+    document.getElementById('results-state').style.display = 'none';
+    update();
+  }
+
+  update();
+</script>
+
+</body>
+</html>
